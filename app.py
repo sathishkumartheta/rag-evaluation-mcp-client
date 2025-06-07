@@ -9,4 +9,4 @@ mcp_client=MCPClient(
 )
 
 tools=mcp_client.get_tools()
-print(tools)
+print("\n".join(f"{t.name}: {t.description}" for t in tools))
