@@ -4,7 +4,8 @@ from smolagents.mcp_client import MCPClient
 
 mcp_client=MCPClient(
     {
-        "url": "https://0e1973235dcfafdf84.gradio.live/gradio_api/mcp/sse"
+        "url": "https://70245af5a0c8a4b7cc.gradio.live/gradio_api/mcp/sse",
+        "transport" : "sse"
     }
 )
 
