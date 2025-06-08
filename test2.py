@@ -37,14 +37,6 @@ try:
     def agent_response(message, history):
         try:
             print("📨 User message:", message)
-
-            # Inject light system hint (optional)
-            message = (
-                "You are a RAG Evaluation Agent. Use the appropriate MCP tools like bm25_relevance_scorer to score relevance, "
-                "redundancy_checker for redundancy, or hallucination_checker for answer validation.\n\n"
-                + message
-            )
-
             result = agent.run(message)
             print("✅ Agent response:", result)
             return str(result)
