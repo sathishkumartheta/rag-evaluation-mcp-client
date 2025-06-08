@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # MCP Server URL — update if changed
-MCP_SERVER_URL = "https://f3efb4feb148564a3f.gradio.live/gradio_api/mcp/sse"
+MCP_SERVER_URL = "https://a59b4424060a3dc4aa.gradio.live/gradio_api/mcp/sse"
 
 try:
     # Initialize MCP Client
@@ -28,10 +28,7 @@ try:
     token = os.getenv("HUGGINGFACE_API_TOKEN")
     if not token:
         raise EnvironmentError("❌ HUGGINGFACE_API_TOKEN not found in environment.")
-    model = InferenceClientModel(
-        token=token,
-        model='model="mistralai/Mistral-7B-Instruct-v0.2"'
-        )
+    model = InferenceClientModel(token=token,model='mistralai/Mistral-7B-Instruct-v0.2')
 
     # Instantiate CodeAgent with fetched tools
     agent = CodeAgent(tools=tools, model=model)
@@ -40,6 +37,14 @@ try:
     def agent_response(message, history):
         try:
             print("📨 User message:", message)
+
+            # Inject light system hint (optional)
+            message = (
+                "You are a RAG Evaluation Agent. Use the appropriate MCP tools like bm25_relevance_scorer to score relevance, "
+                "redundancy_checker for redundancy, or hallucination_checker for answer validation.\n\n"
+                + message
+            )
+
             result = agent.run(message)
             print("✅ Agent response:", result)
             return str(result)
