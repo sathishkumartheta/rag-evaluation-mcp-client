@@ -8,7 +8,7 @@ load_dotenv()
 
 async def main():
     # Connect to your MCP server
-    client = MCPClient("https://fab81580f23894f875.gradio.live/gradio_api/mcp/sse")
+    client = MCPClient("https://1f700a7c745593ccb7.gradio.live/gradio_api/mcp/sse")
 
     # Set up OpenAI-powered agent
     bridge = OpenAIBridge(
@@ -19,26 +19,38 @@ async def main():
 
     # === Prompt example for multi-tool evaluation ===
     message = """
-You are a retrieval evaluation assistant. Use the appropriate tool from the MCP server to complete each task:
+You are an advanced retrieval evaluation agent, equipped with specialized tools to analyze information.
 
-1️⃣ Use `bm25_relevance_scorer` or `semantic_relevance_scorer` to score relevance.
+Your objective is to thoroughly evaluate the relevance, redundancy, and factual alignment of a given set of documents with respect to a query. To achieve this, you may use **any combination of the tools** provided by the MCP server. Each tool has a specific function:
 
-2️⃣ Use `redundancy_checker` to check for similar/repetitive passages.
-
-3️⃣ Use `exact_match_checker` if a direct match with the query needs verification.
+1. 🧠 `bm25_relevance_scorer`: Measures lexical (token-based) relevance between a query and documents.
+2. 🤝 `semantic_relevance_scorer`: Measures semantic similarity using dense embeddings.
+3. 🔁 `redundancy_checker`: Identifies redundant or repetitive information across documents.
+4. ✅ `exact_match_checker`: Verifies whether a document contains an exact textual match for the query.
 
 ---
 
-Task:
+### 💡 Your capabilities:
+- You can **use multiple tools sequentially or in parallel** to answer each task thoroughly.
+- You should **choose tools based on the intent of the task**, and include reasoning if needed.
+- If you're unsure which tool to use, you may perform exploratory steps using more than one tool.
 
-Evaluate the relevance and redundancy of the following documents for the query: "What are the benefits of drinking green tea?"
+---
 
-Documents:
+### 🧪 Task:
+
+Evaluate the semantic correctnes of the following documents for the query:  
+📌 *"What are the benefits of drinking green tea?"*
+
+📄 **Documents:**
 1. Green tea contains antioxidants that help reduce inflammation.
 2. It is commonly consumed in East Asia and has cultural significance.
 3. Studies show green tea may aid in weight loss and improve brain function.
 4. Black tea is made from fermented leaves and contains more caffeine.
+
+Your response should reflect the tools used and the rationale behind your evaluation.
 """
+
 
     # Process the query
     result = await bridge.process_query(message)
@@ -46,8 +58,8 @@ Documents:
     # Print result
     if result.get("tool_call"):
         print(f"✅ Tool: {result['tool_call']['name']}")
-        print("📦 Tool Arguments:")
-        pprint(result["tool_call"]["args"])
+        #print("📦 Tool Arguments:")
+        #pprint(result["tool_call"]["arguments"])
         print("\n📊 Tool Result:")
         pprint(result["tool_result"].content)
     else:

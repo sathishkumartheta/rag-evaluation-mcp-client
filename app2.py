@@ -2,14 +2,14 @@ import gradio as gr
 import os
 import asyncio
 from dotenv import load_dotenv
-from mcp_playground import MCPClient
-from smolagents import CodeAgent
+from mcp_playground import MCPClient, OpenAIBridge
 
 load_dotenv()
 
 # MCP Server connection
 MCP_SERVER_URL = "https://785e87c0901f815632.gradio.live/gradio_api/mcp/sse"
 client = MCPClient(MCP_SERVER_URL)
+bridge = OpenAIBridge(client, api_key=os.environ.get("OPENAI_API_KEY"), model="gpt-4o")
 
 # Prompt builder
 def make_prompt(query, documents, task_instruction):
@@ -36,37 +36,36 @@ Available tools:
 🔍 You may use one or more tools to fully satisfy the instruction. Include rationale behind tool selection and show results.
 """
 
-# Async runner using SmolAgent
+# Async runner
 async def run_eval(query, documents, task_instruction):
     message = make_prompt(query, documents, task_instruction)
-    tools = await client.list_tools()
-    agent = CodeAgent(
-        tools=tools,
-        model="gpt-4o",
-        api_key=os.environ.get("OPENAI_API_KEY")
-    )
-    result = await agent.run(message)
+    result = await bridge.process_query(message)
 
-    if result.tool_result:
-        return f"✅ Tool Used: {result.tool_call.name}\n\n📊 Result:\n{result.tool_result.content}"
+    if result.get("tool_call"):
+        tool = result["tool_call"]["name"]
+        content = result["tool_result"].content
+        return f"✅ Tool Used: {tool}\n\n📊 Result:\n{content}"
     else:
-        return f"🤖 No tool was called.\n\nLLM Response:\n{result.response.content}"
+        return f"🤖 No tool was called.\n\nLLM Response:\n{result['response'].content}"
 
-# Gradio wrapper
+# Wrapper for evaluation
 def evaluate(query, documents, task_instruction):
     return asyncio.run(run_eval(query, documents, task_instruction))
 
-# Async Gradio-compatible tool listing
+# Tool listing
+# Async Gradio-compatible list_tools
 async def list_tools():
     tools = await client.list_tools()
     if not tools:
         return "⚠️ No tools available or MCP server not reachable."
+    
     return "🧰 Available Tools:\n" + "\n".join(f"- {tool.name}" for tool in tools)
+
 
 # Gradio UI
 with gr.Blocks(title="RAG Evaluation MCP Client") as iface:
-    gr.Markdown("## 🔍 RAG Evaluation Agent (Instruction-Guided with SmolAgent)")
-    gr.Markdown("Provide a query, documents, and an instruction. The agent will select and invoke tools via MCP.")
+    gr.Markdown("## 🔍 RAG Evaluation Agent (Instruction-Guided)")
+    gr.Markdown("Provide a query, documents, and an instruction. The agent will select tools accordingly.")
 
     with gr.Row():
         query = gr.Textbox(label="Query", placeholder="e.g., What are the health benefits of eating apples?")
