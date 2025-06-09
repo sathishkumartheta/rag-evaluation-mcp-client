@@ -3,3 +3,5 @@ gradio[mcp]
 mcp
 fastmcp
 openai
+git+https://github.com/sathishkumartheta/mcp-playground.git
+

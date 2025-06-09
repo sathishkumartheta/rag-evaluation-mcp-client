@@ -55,7 +55,7 @@ class OpenAIModel:
         return self.generate(prompt)
 
 # ✅ MCP Server URL
-MCP_SERVER_URL = "https://63ccba7860addf8c94.gradio.live/gradio_api/mcp/sse"
+MCP_SERVER_URL = "https://f4ee6c74c383f1d905.gradio.live/gradio_api/mcp/sse"
 
 try:
     # 🔌 Connect to MCP server

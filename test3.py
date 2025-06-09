@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # MCP Server URL — update if changed
-MCP_SERVER_URL = "https://a59b4424060a3dc4aa.gradio.live/gradio_api/mcp/sse"
+MCP_SERVER_URL = "https://0cb4a5d90405148116.gradio.live/gradio_api/mcp/sse"
 
 try:
     # Initialize MCP Client
@@ -28,7 +28,7 @@ try:
     token = os.getenv("HUGGINGFACE_API_TOKEN")
     if not token:
         raise EnvironmentError("❌ HUGGINGFACE_API_TOKEN not found in environment.")
-    model = InferenceClientModel(token=token,model='mistralai/Mistral-7B-Instruct-v0.2')
+    model = InferenceClientModel(token=token)
 
     # Instantiate CodeAgent with fetched tools
     agent = CodeAgent(tools=tools, model=model)
