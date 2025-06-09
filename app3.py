@@ -7,67 +7,60 @@ from mcp_playground import MCPClient, OpenAIBridge
 load_dotenv()
 
 # MCP Server connection
-MCP_SERVER_URL = "https://ecb3fb0f503b7d47f5.gradio.live/gradio_api/mcp/sse"
+MCP_SERVER_URL = "https://59d7dd5931ea957432.gradio.live/gradio_api/mcp/sse"
 client = MCPClient(MCP_SERVER_URL)
 bridge = OpenAIBridge(client, api_key=os.environ.get("OPENAI_API_KEY"), model="gpt-4o")
 
 # Prompt builder
 def make_prompt(query, documents, task_instruction):
-    # Proper JSON-like array for the 'docs' argument
-    doc_array = "[" + ",\n".join(f'"{doc.strip()}"' for doc in documents.split("\n") if doc.strip()) + "]"
+    doc_list = "\n".join(f"{i+1}. {doc.strip()}" for i, doc in enumerate(documents.split("\n")) if doc.strip())
     return f"""
 You are an advanced retrieval evaluation agent with access to multiple tools via the MCP server.
 
 Use the following instruction to determine which tools to apply:
-🧾 Instruction: {task_instruction.strip()}
+🧾 **Instruction**: {task_instruction.strip()}
 
-Available tools (you must format inputs exactly using argument names):
-
-1. 🧠 `bm25_relevance_scorer(query: str, documents: List[str])`
-2. 🤝 `semantic_relevance_scorer(query: str, documents: List[str])`
-3. 🔁 `redundancy_checker(docs: List[str])`
-4. ✅ `exact_match_checker(query: str, documents: List[str])`
+Available tools:
+1. 🧠 `bm25_relevance_scorer` — Lexical relevance.
+2. 🤝 `semantic_relevance_scorer` — Semantic relevance.
+3. 🔁 `redundancy_checker` — Redundancy or repetition.
+4. ✅ `exact_match_checker` — Exact textual match.
 
 ---
 
-📌 query = "{query.strip()}"
+📌 **Query**: "{query.strip()}"
 
-📄 documents (pass this to relevant tool as 'docs' or 'documents' argument):
-{doc_array}
+📄 **Documents**:
+{doc_list}
 
-📣 Be sure to call the tool by passing named arguments only.
+🔍 You may use one or more tools to fully satisfy the instruction. Include rationale behind tool selection and show results.
 """
 
+# Async runner
 async def run_eval(query, documents, task_instruction):
     message = make_prompt(query, documents, task_instruction)
     result = await bridge.process_query(message)
 
-    # 🩹 HOTFIX: Inject docs if tool is redundancy_checker
     if result.get("tool_call"):
         tool = result["tool_call"]["name"]
-        args = result["tool_call"].get("args", {})
-
-        if tool == "redundancy_checker" and not args.get("docs"):
-            docs_list = [doc.strip() for doc in documents.split("\n") if doc.strip()]
-            result["tool_call"]["args"] = {"docs": docs_list}
-            result["tool_result"] = await client.invoke(tool, **result["tool_call"]["args"])
-
         content = result["tool_result"].content
         return f"✅ Tool Used: {tool}\n\n📊 Result:\n{content}"
     else:
         return f"🤖 No tool was called.\n\nLLM Response:\n{result['response'].content}"
-
 
 # Wrapper for evaluation
 def evaluate(query, documents, task_instruction):
     return asyncio.run(run_eval(query, documents, task_instruction))
 
 # Tool listing
+# Async Gradio-compatible list_tools
 async def list_tools():
     tools = await client.list_tools()
     if not tools:
         return "⚠️ No tools available or MCP server not reachable."
+    
     return "🧰 Available Tools:\n" + "\n".join(f"- {tool.name}" for tool in tools)
+
 
 # Gradio UI
 with gr.Blocks(title="RAG Evaluation MCP Client") as iface:

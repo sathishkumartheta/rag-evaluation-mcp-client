@@ -4,6 +4,7 @@ import asyncio
 from dotenv import load_dotenv
 from mcp_playground import MCPClient
 from smolagents import CodeAgent
+from smolagents.adapters.mcp import MCPAdaptTool
 
 load_dotenv()
 
@@ -39,12 +40,18 @@ Available tools:
 # Async runner using SmolAgent
 async def run_eval(query, documents, task_instruction):
     message = make_prompt(query, documents, task_instruction)
-    tools = await client.list_tools()
+    raw_tools = await client.list_tools()
+    tools = [MCPAdaptTool(tool, client=client) for tool in raw_tools]  # ✅ Wrap each MCP tool
+
     agent = CodeAgent(
         tools=tools,
-        model="gpt-4o",
-        api_key=os.environ.get("OPENAI_API_KEY")
+        model={
+            "provider": "openai",
+            "model": "gpt-4o",
+            "api_key": os.environ.get("OPENAI_API_KEY")
+        }
     )
+
     result = await agent.run(message)
 
     if result.tool_result:
@@ -52,7 +59,7 @@ async def run_eval(query, documents, task_instruction):
     else:
         return f"🤖 No tool was called.\n\nLLM Response:\n{result.response.content}"
 
-# Gradio wrapper
+# Sync Gradio wrapper
 def evaluate(query, documents, task_instruction):
     return asyncio.run(run_eval(query, documents, task_instruction))
 
@@ -65,11 +72,11 @@ async def list_tools():
 
 # Gradio UI
 with gr.Blocks(title="RAG Evaluation MCP Client") as iface:
-    gr.Markdown("## 🔍 RAG Evaluation Agent (Instruction-Guided with SmolAgent)")
-    gr.Markdown("Provide a query, documents, and an instruction. The agent will select and invoke tools via MCP.")
+    gr.Markdown("## 🔍 RAG Evaluation Agent (SmolAgent-powered)")
+    gr.Markdown("Provide a query, documents, and an instruction. The agent will select and call tools via MCP.")
 
     with gr.Row():
-        query = gr.Textbox(label="Query", placeholder="e.g., What are the health benefits of eating apples?")
+        query = gr.Textbox(label="Query", placeholder="e.g., What are the benefits of drinking green tea?")
         instruction = gr.Textbox(label="Task Instruction", placeholder="e.g., Evaluate for redundancy")
 
     documents = gr.Textbox(label="Documents", placeholder="Enter one document per line", lines=10)

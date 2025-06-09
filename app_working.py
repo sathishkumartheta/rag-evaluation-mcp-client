@@ -7,7 +7,7 @@ from mcp_playground import MCPClient, OpenAIBridge
 load_dotenv()
 
 # Initialize MCP client and bridge
-MCP_SERVER_URL = "https://1f700a7c745593ccb7.gradio.live/gradio_api/mcp/sse"
+MCP_SERVER_URL = "https://59d7dd5931ea957432.gradio.live/gradio_api/mcp/sse"
 client = MCPClient(MCP_SERVER_URL)
 bridge = OpenAIBridge(client, api_key=os.environ.get("OPENAI_API_KEY"), model="gpt-4o")
 
